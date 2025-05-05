@@ -14,8 +14,22 @@ export default function LayoutContent({ children }) {
     }
   }, [isLoading, user, router]);
 
-  if (isLoading) return <div>Loading...</div>;
-  if (!user) return null;
+  if (isLoading) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        minHeight: '100vh' 
+      }}>
+        Loading...
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
 
   return children;
 }

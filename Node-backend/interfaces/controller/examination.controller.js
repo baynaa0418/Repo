@@ -38,6 +38,7 @@ export const createExamination = async (req, res) => {
 
 //all the examinations that medical staff
 export const getMedicalStaffExamHistory = async (req, res) => {
+  console.log("req.user:", req.user);
   try {
     const staffId = req.user.id;
     const filters = req.query; // You can pass query parameters for filtering

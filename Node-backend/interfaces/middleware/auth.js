@@ -15,6 +15,8 @@ export const authenticateJWT = (req, res, next) => {
 
 export const authorizeRole = (roles) => (req, res, next) => {
   // First check if req.user exists
+
+  console.log("User object:", req.user);  
   if (!req.user) {
     return res.status(401).json({ error: "Authentication required" });
   }

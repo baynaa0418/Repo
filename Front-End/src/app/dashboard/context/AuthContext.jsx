@@ -1,46 +1,83 @@
 // src/context/AuthContext.js
+"use client";
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { verifyToken } from '@/lib/auth';
 
 const AuthContext = createContext();
 
-export function AuthProvider({ children }) {
+export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [isLoading, setIsLoading] = useState(true); // 🔧 нэмэгдсэн
+  const [token, setToken] = useState(null);
   const router = useRouter();
 
   useEffect(() => {
-    const checkAuth = () => {
-      const token = document.cookie.split('; ')
-        .find(row => row.startsWith('token='))
-        ?.split('=')[1];
-      
-      if (token) {
-        const verifiedUser = verifyToken(token);
-        if (verifiedUser) {
-          setUser(verifiedUser);
-        } else {
-          document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-          router.push('/login');
+    const checkAuth = async () => {
+      try {
+        const userData = localStorage.getItem('user');
+        const storedToken = localStorage.getItem('token');
+        
+        if (userData && storedToken) {
+          // Token-ийг шалгах
+          const response = await fetch('http://localhost:8000/api/auth/verify', {
+            headers: {
+              Authorization: `Bearer ${storedToken}`
+            }
+          });
+
+          if (response.ok) {
+            setUser(JSON.parse(userData));
+            setToken(storedToken);
+          } else {
+            // Token хүчинтэй биш бол localStorage-оос устгах
+            localStorage.removeItem('user');
+            localStorage.removeItem('token');
+            setUser(null);
+            setToken(null);
+            router.push('/authentication/login');
+          }
         }
+      } catch (error) {
+        console.error('Нэвтрэлт шалгахад алдаа гарлаа:', error);
+        localStorage.removeItem('user');
+        localStorage.removeItem('token');
+        setUser(null);
+        setToken(null);
+        router.push('/authentication/login');
       }
-      setIsLoading(false); // 🔧 шалгалт дууссан үед false болгоно
     };
 
     checkAuth();
   }, [router]);
 
+  const login = (userData, userToken) => {
+    setUser(userData);
+    setToken(userToken);
+    localStorage.setItem("user", JSON.stringify(userData));
+    localStorage.setItem("token", userToken);
+  };
+
+  const logout = () => {
+    setUser(null);
+    setToken(null);
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
+    router.push("/authentication/login");
+  };
+
   return (
-    <AuthContext.Provider value={{ user, setUser, isLoading }}>
+    <AuthContext.Provider value={{ user, token, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
-}
+};
 
-export function useAuth() {
-  return useContext(AuthContext);
-}
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
+};
 
 
 

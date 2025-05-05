@@ -13,7 +13,12 @@ import {
   Divider,
   FormControlLabel,
   Checkbox,
-  Link as MuiLink
+  Link as MuiLink,
+  Container,
+  Paper,
+  FormControl,
+  InputLabel,
+  Select
 } from '@mui/material';
 import Link from 'next/link';
 import { useFormik } from 'formik';
@@ -25,14 +30,15 @@ import EmailIcon from '@mui/icons-material/Email';
 import PhoneIcon from '@mui/icons-material/Phone';
 import { useRouter } from 'next/navigation';
 import { SignJWT, jwtVerify } from 'jose';
+import { useAuth } from '@/app/dashboard/context/AuthContext';
 
 // Validation schema
 const loginSchema = yup.object({
-  email: yup.string().email('Хүчинтэй имэйл оруулна уу').required('Имэйлээ оруулна уу'),
+  email: yup.string().email('И-мэйл хаяг буруу байна').required('И-мэйл хаяг оруулна уу'),
   password: yup.string()
     .min(8, 'Нууц үг хамгийн багадаа 8 тэмдэгт байх ёстой')
-    .required('Нууц үгээ оруулна уу'),
-  role: yup.string().required('Эрхээ сонгоно уу')
+    .required('Нууц үг оруулна уу'),
+  role: yup.string().required('Эрх сонгоно уу')
 });
 
 // Demo user data with redirect paths
@@ -49,19 +55,27 @@ const demoUsers = [
     password: 'Password123%',
     role: 'doctor',
     name: 'Эмч хэрэглэгч',
-    redirect: '/dashboard/home'  // Changed to home page
+    redirect: '/dashboard/home'
+  },
+  {
+    email: 'nurse@ex.com',
+    password: 'Password123%',
+    role: 'nurse',
+    name: 'Сувилагч хэрэглэгч',
+    redirect: '/dashboard/home'
   },
   {
     email: 'admin@ex.com',
     password: 'Password123%',
     role: 'admin',
     name: 'Системийн админ',
-    redirect: '/admin/dashboard'
+    redirect: '/dashboard/home'
   }
 ];
 
 export default function AuthLogin() {
   const router = useRouter();
+  const { login } = useAuth();
   const [loginError, setLoginError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
@@ -70,30 +84,21 @@ export default function AuthLogin() {
   // Check authentication status on mount
   useEffect(() => {
     const checkAuth = async () => {
-      const token = localStorage.getItem('USER') ? 
-        JSON.parse(localStorage.getItem('USER')).token : 
-        document.cookie.split('; ').find(row => row.startsWith('token='));
-      
-      if (token) {
+      const userData = localStorage.getItem('USER');
+      if (userData) {
         try {
-          // Verify token if exists
+          const { token, user } = JSON.parse(userData);
           const { payload } = await jwtVerify(
-            typeof token === 'string' ? token.split('=')[1] : token,
+            token,
             new TextEncoder().encode(process.env.NEXT_PUBLIC_JWT_SECRET || 'default-secure-key-32-chars')
           );
           
           // Redirect based on role
-          const user = demoUsers.find(u => u.role === payload.role);
-          if (user) {
-            if (user.role === 'doctor') {
-              window.location.href = user.redirect;
-            } else {
-              router.push(user.redirect);
-            }
+          const demoUser = demoUsers.find(u => u.role === user.role);
+          if (demoUser) {
+            router.push(demoUser.redirect);
           }
         } catch (error) {
-          // Clear invalid token
-          document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
           localStorage.removeItem('USER');
         }
       }
@@ -115,51 +120,33 @@ export default function AuthLogin() {
         setIsSubmitting(true);
         setLoginError('');
         
-        // Find matching user
-        const user = demoUsers.find(u => 
-          u.email === values.email && 
-          u.password === values.password && 
-          u.role === values.role
-        );
+        const response = await fetch("http://localhost:8000/api/auth/signin", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(values),
+        });
 
-        if (!user) {
-          throw new Error('Имэйл, нууц үг эсвэл эрх буруу байна');
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || "Нэвтрэхэд алдаа гарлаа");
         }
 
-        // Create JWT token
-        const token = await new SignJWT({
-          email: user.email,
-          role: user.role,
-          name: user.name
-        })
-          .setProtectedHeader({ alg: 'HS256' })
-          .setExpirationTime('1h')
-          .sign(new TextEncoder().encode(
-            process.env.NEXT_PUBLIC_JWT_SECRET || 'default-secure-key-32-chars'
-          ));
+        // Save token and user data
+        localStorage.setItem("token", data.accessToken);
+        localStorage.setItem("user", JSON.stringify(data.user));
 
-        // Store based on remember me choice
-        if (rememberMe) {
-          localStorage.setItem('USER', JSON.stringify({ 
-            token, 
-            user: {
-              name: user.name,
-              email: user.email,
-              role: user.role
-            } 
-          }));
-        } else {
-          const isSecure = window.location.protocol === 'https:';
-          document.cookie = `token=${token}; path=/; max-age=3600; SameSite=Lax${isSecure ? '; Secure' : ''}`;
-        }
+        // Update auth context
+        login(data.user, data.accessToken);
 
-        // Redirect - special handling for doctors
-        if (user.role === '') {
-          window.location.href = user.redirect;
-        } else {
-          router.push(user.redirect);
+        // Redirect based on role
+        if (data.user.role === "MedicalStaff" || data.user.role === "admin") {
+          router.push("/dashboard/home");
+        } else if (data.user.role === "patient") {
+          router.push("/patientProfile/customerProfile");
         }
-        
       } catch (error) {
         console.error('Нэвтрэх алдаа:', error);
         setLoginError(error.message);
@@ -179,177 +166,101 @@ export default function AuthLogin() {
   }
 
   return (
-    <Box sx={{ 
-      maxWidth: 400, 
-      mx: 'auto', 
-      p: 3, 
-      boxShadow: 3, 
-      borderRadius: 2,
-      mt: 8,
-      backgroundColor: 'background.paper'
-    }}>
-      <ToastContainer position="top-center" autoClose={5000} />
-      
-      <Typography variant="h5" fontWeight="bold" mb={1} textAlign="center" sx={{ color: "#333" }}>
-        НЭВТРЭХ
-      </Typography>
-
-      <Typography variant="body2" sx={{ color: "#666", mb: 3, textAlign: 'center' }}>
-        Та Монгол Улсын Их Сургуулийн <b>Эмнэлгийн Системд</b> тавтай морилно уу?
-      </Typography>
-
-      <Button
-        variant="outlined"
-        fullWidth
+    <Container component="main" maxWidth="xs">
+      <Paper
+        elevation={3}
         sx={{
-          mb: 3,
-          textTransform: "none",
-          borderColor: "#ddd",
-          color: "#333",
-          fontWeight: 500,
-          "&:hover": {
-            backgroundColor: "#fafafa",
-            borderColor: "#ccc",
-          },
-        }}
-        onClick={() => {
-          window.location.href = "https://sisi.num.edu.mn";
+          marginTop: 8,
+          padding: 4,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
         }}
       >
-        СиСи эрхээр нэвтрэх
-      </Button>
-
-      <Divider sx={{ mb: 3 }}>
-        <Typography variant="body2" sx={{ color: "#999" }}>
-          ЭСВЭЛ
+        <Typography component="h1" variant="h5">
+          Нэвтрэх
         </Typography>
-      </Divider>
 
-      {loginError && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setLoginError('')}>
-          {loginError}
-        </Alert>
-      )}
+        {loginError && (
+          <Alert severity="error" sx={{ mt: 2, width: "100%" }}>
+            {loginError}
+          </Alert>
+        )}
 
-      <form onSubmit={formik.handleSubmit}>
-        <Stack spacing={2}>
+        <Box
+          component="form"
+          onSubmit={formik.handleSubmit}
+          sx={{ mt: 1, width: "100%" }}
+        >
           <TextField
-            select
+            margin="normal"
+            required
             fullWidth
-            name="role"
-            label="Эрх сонгох"
-            value={formik.values.role}
-            onChange={formik.handleChange}
-            onBlur={formik.handleBlur}
-            error={formik.touched.role && Boolean(formik.errors.role)}
-            helperText={formik.touched.role && formik.errors.role}
-          >
-            <MenuItem value="patient">Өвчтөн</MenuItem>
-            <MenuItem value="doctor">ЭмчАдмин</MenuItem>
-            <MenuItem value="admin">Админ</MenuItem>
-          </TextField>
-
-          <TextField
-            fullWidth
+            id="email"
+            label="И-мэйл хаяг"
             name="email"
-            label="Цахим шуудан"
+            autoComplete="email"
+            autoFocus
             value={formik.values.email}
             onChange={formik.handleChange}
-            onBlur={formik.handleBlur}
             error={formik.touched.email && Boolean(formik.errors.email)}
             helperText={formik.touched.email && formik.errors.email}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <EmailIcon sx={{ color: "#999" }} />
-                </InputAdornment>
-              ),
-            }}
           />
-
           <TextField
+            margin="normal"
+            required
             fullWidth
             name="password"
             label="Нууц үг"
             type="password"
+            id="password"
+            autoComplete="current-password"
             value={formik.values.password}
             onChange={formik.handleChange}
-            onBlur={formik.handleBlur}
             error={formik.touched.password && Boolean(formik.errors.password)}
             helperText={formik.touched.password && formik.errors.password}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <LockIcon sx={{ color: "#999" }} />
-                </InputAdornment>
-              ),
-            }}
           />
-
-          <Box display="flex" justifyContent="space-between" alignItems="center">
-            <FormControlLabel
-              control={<Checkbox checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} />}
-              label="Намайг сана"
-              sx={{ color: "#333" }}
-            />
-            <MuiLink
-              component={Link}
-              href="/forgot-password"
-              underline="none"
-              sx={{ color: "primary.main", fontSize: "0.875rem" }}
+          <FormControl fullWidth margin="normal">
+            <InputLabel id="role-label">Эрх</InputLabel>
+            <Select
+              labelId="role-label"
+              id="role"
+              name="role"
+              value={formik.values.role}
+              onChange={formik.handleChange}
+              label="Эрх"
+              error={formik.touched.role && Boolean(formik.errors.role)}
             >
-              Нууц үг мартсан?
-            </MuiLink>
-          </Box>
-
-          <Button 
-            type="submit" 
-            variant="contained" 
+              <MenuItem value="patient">Өвчтөн</MenuItem>
+              <MenuItem value="doctor">Эмч</MenuItem>
+              <MenuItem value="admin">Админ</MenuItem>
+            </Select>
+          </FormControl>
+          <Button
+            type="submit"
             fullWidth
-            size="large"
-            disabled={isSubmitting}
-            sx={{ 
-              mt: 2,
-              textTransform: "none",
-              fontWeight: "none",
-              backgroundColor: "#1976d2",
-              "&:hover": {
-                backgroundColor: "#1565c0",
-              },
-            }}
-            endIcon={isSubmitting ? <CircularProgress size={24} /> : null}
+            variant="contained"
+            sx={{ mt: 3, mb: 2 }}
           >
-            {isSubmitting ? 'Нэвтэрч байна...' : 'Нэвтрэх'}
+            Нэвтрэх
           </Button>
-        </Stack>
-      </form>
+        </Box>
 
-      <Box textAlign="center" mt={3}>
-        <Typography variant="body2" component="span" sx={{ color: "#666" }}>
-          Гишүүн болж амжаагүй байна уу?{" "}
-        </Typography>
-        <Typography
-          variant="body2"
-          component={Link}
-          href="/authentication/register"
-          sx={{
-            textDecoration: "none",
-            color: "primary.main",
-            fontWeight: 500,
-          }}
-        >
-          Бүртгүүлэх
-        </Typography>
-      </Box>
-
-      <Box sx={{ mt: 3, textAlign: 'center' }}>
-        <Typography variant="body2" color="text.secondary">
-          Туршилтын данс: patient@ex.com / Password123% (Өвчтөн)
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          doctor@ex.com / Password123% (Эмч/Админ)
-        </Typography>
-      </Box>
-    </Box>
+        <Box sx={{ mt: 2 }}>
+          <Typography variant="body2" color="text.secondary">
+            Туршилтын хэрэглэгчид:
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Өвчтөн: patient@ex.com / Password123%
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Эмч: doctor@ex.com / Password123%
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Админ: admin@ex.com / Password123%
+          </Typography>
+        </Box>
+      </Paper>
+    </Container>
   );
 }

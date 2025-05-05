@@ -1,8 +1,8 @@
 //src/app/(DashboardLayout)/layout.jsx
 "use client";
 import { styled, Container, Box } from "@mui/material";
-import Header from "@/app/(DashboardLayout)/layout/header/Header";
-import Sidebar from "@/app/(DashboardLayout)/layout/sidebar/Sidebar";
+import Header from "@/app/dashboard/layout/header/Header";
+import Sidebar from "@/app/dashboard/layout/sidebar/Sidebar";
 import LayoutContent from "./LayoutContent";
 
 const MainWrapper = styled("div")(() => ({

@@ -12,8 +12,8 @@ import {
 } from "@mui/material";
 import { Stack } from "@mui/system";
 import { IconPlus, IconPill, IconHeartPlus, IconEye, IconBottle } from "@tabler/icons-react";
-import BlankCard from "@/app/(DashboardLayout)/components/shared/BlankCard";
-import DashboardCard from '@/app/(DashboardLayout)/components/shared/DashboardCard';
+import BlankCard from "@/app/dashboard/components/shared/BlankCard";
+import DashboardCard from '@/app/dashboard/components/shared/DashboardCard';
 import { useTheme } from '@mui/material/styles';
 
 const medications = [

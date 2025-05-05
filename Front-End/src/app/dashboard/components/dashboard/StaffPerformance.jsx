@@ -8,7 +8,7 @@ import {
     Chip,
     Avatar
 } from '@mui/material';
-import DashboardCard from '@/app/(DashboardLayout)/components/shared/DashboardCard';
+import DashboardCard from '@/app/dashboard/components/shared/DashboardCard';
 
 const doctors = [
     {

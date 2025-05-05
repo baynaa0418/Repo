@@ -3,7 +3,7 @@ const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 import { useTheme } from '@mui/material/styles';
 import { Stack, Typography, Avatar, Fab } from '@mui/material';
 import { IconArrowUpRight, IconCurrencyDollar } from '@tabler/icons-react';
-import DashboardCard from '@/app/(DashboardLayout)/components/shared/DashboardCard';
+import DashboardCard from '@/app/dashboard/components/shared/DashboardCard';
 
 const MonthlyRevenue = () => {
   // chart color

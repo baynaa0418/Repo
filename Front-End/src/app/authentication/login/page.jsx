@@ -1,8 +1,8 @@
 "use client";
 import React from "react";
 import { Grid, Box } from "@mui/material";
-import PageContainer from "@/app/(DashboardLayout)/components/container/PageContainer";
-import LoginInfo from "@/app/(DashboardLayout)/components/login/LoginInfo";
+import PageContainer from "@/app/dashboard/components/container/PageContainer";
+import LoginInfo from "@/app/dashboard/components/login/LoginInfo";
 import AuthLogin from "../auth/AuthLogin";
 
 const Login2 = () => {

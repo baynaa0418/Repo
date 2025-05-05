@@ -1,7 +1,7 @@
-//src/app/(DashboardLayout)/LayoutContent.jsx
+// src/app/(DashboardLayout)/LayoutContent.jsx
 'use client';
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/app/(DashboardLayout)/context/AuthContext";
+import { useAuth } from "@/app/dashboard/context/AuthContext";
 import { useEffect } from "react";
 
 export default function LayoutContent({ children }) {

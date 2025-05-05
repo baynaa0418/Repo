@@ -1,7 +1,7 @@
 import { useMediaQuery, Box, Drawer } from "@mui/material";
 import SidebarItems from "./SidebarItems";
 import { Sidebar} from 'react-mui-sidebar';
-import Logo from "@/app/(DashboardLayout)/layout/shared/logo/Logo";
+import Logo from "@/app/dashboard/layout/shared/logo/Logo";
 
 const MSidebar = ({
   isMobileSidebarOpen,

@@ -3,7 +3,7 @@
 import { baselightTheme } from "@/utils/theme/DefaultColors";
 import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
-import { AuthProvider } from "@/app/(DashboardLayout)/context/AuthContext";
+import { AuthProvider } from "@/app/dashboard/context/AuthContext";
 
 export default function RootLayout({ children }) {
   return (

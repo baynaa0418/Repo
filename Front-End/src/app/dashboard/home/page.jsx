@@ -1,350 +1,240 @@
-'use client';
-import React, { useState, useEffect, useRef } from 'react';
-import {
-  Box,
-  Tabs,
-  Tab,
-  Typography,
-  Divider,
-  Stack,
-  Menu,
-  MenuItem,
-  IconButton,
-  TextField,
-  Button,
-  Container
-} from '@mui/material';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
-import ClearIcon from '@mui/icons-material/Clear';
-import { useRouter, useParams } from 'next/navigation';
-import { jsPDF } from 'jspdf';
-import html2canvas from 'html2canvas';
-import { useAuth } from '@/app/dashboard/context/AuthContext';
-import { toast } from 'react-toastify';
+// 'use client'
+// import { Grid, Box } from '@mui/material';
+// import PageContainer from '@/app/(DashboardLayout)/components/container/PageContainer';
+// // components
+// import SalesOverview from '@/app/(DashboardLayout)/components/dashboard/SalesOverview';
+// import YearlyBreakup from '@/app/(DashboardLayout)/components/dashboard/YearlyBreakup';
+// import RecentTransactions from '@/app/(DashboardLayout)/components/dashboard/RecentTransactions';
+// import ProductPerformance from '@/app/(DashboardLayout)/components/dashboard/ProductPerformance';
+// import Blog from '@/app/(DashboardLayout)/components/dashboard/Blog';
+// import MonthlyEarnings from '@/app/(DashboardLayout)/components/dashboard/MonthlyEarnings';
+// import { useAuth } from './context/authContext';
 
-const customerData = {
-  '1': {
-    id: 1,
-    name: 'Батбаяр Ариунболд',
-    birthDate: '2001/07/06',
-    age: 23,
-    type: 'Оюутан',
-    address: 'УБ, 3-р хороо, Даваа салбар, ...',
-    phone: '9921 8857',
-    vitalSigns: [
-      { date: '2023/10/15', height: '175cm', weight: '70kg', bloodPressure: '120/80', temperature: '36.6' },
-      { date: '2023/09/20', height: '175cm', weight: '68kg', bloodPressure: '118/78', temperature: '36.5' }
-    ],
-    medicalHistory: [
-      { date: '2022/05/10', diagnosis: 'Харшил', treatment: 'Антигистамин', doctor: 'Д. Энхчимэг' },
-      { date: '2021/11/15', diagnosis: 'Ханиад', treatment: 'Антибиотик', doctor: 'Д. Энхчимэг' }
-    ],
-    treatmentHistory: [
-      { date: '2023/10/15', procedure: 'Шүдний эмчилгээ', dentist: 'Б. Ганцэцэг', notes: 'Хоёр шүд цэвэрлэлт хийсэн' },
-      { date: '2023/07/22', procedure: 'Шүд суулгах', dentist: 'Б. Ганцэцэг', notes: 'Дээд 2 шүд суулгасан' }
-    ],
-    examinationHistory: [
-      { date: '2023/10/15', type: 'Ерөнхий үзлэг', result: 'Хэвийн', doctor: 'Д. Энхчимэг' },
-      { date: '2023/05/10', type: 'Шүдний рентген', result: 'Хоёр шүдэнд цооролтой', doctor: 'Б. Ганцэцэг' }
-    ]
-  }
-};
+// const Dashboard = () => {
+//   const { user } = useAuth();
 
-export default function PatientProfile() {
-  const router = useRouter();
-  const params = useParams();
-  const [tabValue, setTabValue] = useState(0);
-  const [customer, setCustomer] = useState(null);
-  const [anchorEl, setAnchorEl] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const pdfRef = useRef();
+//   return (
+//     <PageContainer title="Dashboard" description="this is Dashboard">
+//       <Box>
+//         <Grid container spacing={3}>
+//           <Grid item xs={12} lg={8}>
+//             <SalesOverview />
+//           </Grid>
+//           <Grid item xs={12} lg={4}>
+//             <Grid container spacing={3}>
+//               <Grid item xs={12}>
+//                 <YearlyBreakup />
+//               </Grid>
+//               <Grid item xs={12}>
+//                 <MonthlyEarnings />
+//               </Grid>
+//             </Grid>
+//           </Grid>
+//           <Grid item xs={12} lg={4}>
+//             <RecentTransactions />
+//           </Grid>
+//           <Grid item xs={12} lg={8}>
+//             <ProductPerformance />
+//           </Grid>
+//           <Grid item xs={12}>
+//             <Blog />
+//           </Grid>
+//         </Grid>
+//       </Box>
+//     </PageContainer>
+//   )
+// }
+
+// export default Dashboard;
+
+
+'use client'
+import { Grid, Box, Typography } from '@mui/material';
+import PageContainer from '@/app/dashboard/components/container/PageContainer';
+// components
+import { useAuth } from '../context/AuthContext';
+import PatientOverview from '../components/dashboard/PatientOverview';
+import DepartmentBreakdown from '../components/dashboard/DepartmentBreakdown';
+import MonthlyRevenue from '../components/dashboard/MonthlyRevenue';
+import RecentAppointments from '../components/dashboard/recentAppointment';
+import StaffPerformance from '../components/dashboard/StaffPerformance';
+import AvailableMedications from '../components/dashboard/AvailableMed';
+
+export default function Dashboard() {
   const { user } = useAuth();
 
   useEffect(() => {
-    if (user === null) return;
-    if (!user) {
-      router.push('/patientProfile/customerProfile');
-    } else if (user.role !== 'patient') {
-      router.push('/unauthorized');
-    }
-  }, [user, router]);
-
-  useEffect(() => {
-    if (user?.role === 'patient') {
-      const id = params?.id || '1';
-      if (customerData[id]) {
-        setCustomer(customerData[id]);
-      } else {
-        router.push('/patientProfile/customerProfile');
-      }
-    }
-  }, [user, params?.id, router]);
-
-  const handleTabChange = (event, newValue) => {
-    setTabValue(newValue);
-  };
-
-  const handleMenuOpen = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleMenuClose = () => {
-    setAnchorEl(null);
-  };
-
-  const downloadPDF = async () => {
-    handleMenuClose();
-    const input = pdfRef.current;
-    const canvas = await html2canvas(input, { 
-      scale: 2, 
-      useCORS: true, 
-      allowTaint: true,
-      backgroundColor: '#ffffff'
-    });
-    const imgData = canvas.toDataURL('image/png');
-    const pdf = new jsPDF('p', 'mm', 'a4');
-    const imgWidth = 210;
-    const pageHeight = 295;
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
-    let heightLeft = imgHeight;
-    let position = 0;
-
-    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-    heightLeft -= pageHeight;
-
-    while (heightLeft >= 0) {
-      position = heightLeft - imgHeight;
-      pdf.addPage();
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-    }
-
-    pdf.save(`${customer.name}_profile.pdf`);
-  };
-
-  const renderTabContent = () => {
-    if (!customer) return null;
-    
-    const tabRenderers = [
-      {
-        title: 'Амин үзүүлэлт',
-        data: customer.vitalSigns,
-        fields: [
-          { label: 'Өндөр', key: 'height' },
-          { label: 'Жин', key: 'weight' },
-          { label: 'Цусны даралт', key: 'bloodPressure' },
-          { label: 'Биеийн температур', key: 'temperature', suffix: '°C' }
-        ]
-      },
-      {
-        title: 'Өвчний түүх',
-        data: customer.medicalHistory,
-        fields: [
-          { label: 'Онош', key: 'diagnosis' },
-          { label: 'Эмчилгээ', key: 'treatment' },
-          { label: 'Эмч', key: 'doctor' }
-        ]
-      },
-      {
-        title: 'Эмчилгээний түүх',
-        data: customer.treatmentHistory,
-        fields: [
-          { label: 'Процедур', key: 'procedure' },
-          { label: 'Эмч', key: 'dentist' },
-          { label: 'Тэмдэглэл', key: 'notes' }
-        ]
-      },
-      {
-        title: 'Үзлэгийн түүх',
-        data: customer.examinationHistory,
-        fields: [
-          { label: 'Төрөл', key: 'type' },
-          { label: 'Үр дүн', key: 'result' },
-          { label: 'Эмч', key: 'doctor' }
-        ]
-      }
-    ];
-
-    const { title, data, fields } = tabRenderers[tabValue];
-
-    const filteredData = data.filter(entry => 
-      Object.values(entry).some(value => 
-        value.toString().toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    );
-
-    return (
-      <>
-        <Typography variant="h6" gutterBottom>{title}</Typography>
-        <Divider sx={{ mb: 2 }} />
-        
-        <TextField
-          label="Хайх"
-          variant="outlined"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          fullWidth
-          sx={{ mb: 3 }}
-          InputProps={{
-            endAdornment: searchQuery && (
-              <IconButton onClick={() => setSearchQuery('')}>
-                <ClearIcon />
-              </IconButton>
-            ),
-          }}
-        />
-        
-        {filteredData.length > 0 ? (
-          filteredData.map((entry, index) => (
-            <Box 
-              key={index} 
-              sx={{ 
-                mb: 3, 
-                p: 2, 
-                border: '1px solid #eee', 
-                borderRadius: '8px',
-                width: '100%'
-              }}
-            >
-              <Typography variant="subtitle2" color="text.secondary">{entry.date}</Typography>
-              <Stack direction="row" spacing={4} sx={{ mt: 1 }} flexWrap="wrap">
-                {fields.map((field, i) => (
-                  <Box key={i} sx={{ minWidth: '200px', mb: 1 }}>
-                    <Typography variant="body2" color="text.secondary">{field.label}</Typography>
-                    <Typography>{entry[field.key]}{field.suffix || ''}</Typography>
-                  </Box>
-                ))}
-              </Stack>
-            </Box>
-          ))
-        ) : (
-          <Typography color="text.secondary">Мэдээлэл байхгүй</Typography>
-        )}
-      </>
-    );
-  };
+    console.log("sdaaaa----->",user);
+  });
 
   return (
-    <Container 
-      maxWidth="lg" 
-      sx={{ 
-        p: { xs: 1, sm: 2 },
-        height: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-        overflow: 'hidden'
-      }}
-    >
-      <Box sx={{ mb: 2 }}>
-        <IconButton onClick={() => router.back()}>
-          <ArrowBackIcon />
-        </IconButton>
-        <Typography variant="h5" gutterBottom>Өвчтөний дэлгэрэнгүй</Typography>
+    <PageContainer title="Эмнэлгийн хяналтын самбар" description="Hospital Dashboard">
+      <Box sx={{ pt: 2, pb: 4 }}>
+        <Typography variant="h4" fontWeight="600" sx={{ mb: 4 }}>
+          Эмнэлгийн хяналтын самбар
+        </Typography>
+        <Grid container spacing={3}>
+          <Grid item xs={12} lg={8}>
+            <PatientOverview />
+          </Grid>
+          <Grid item xs={12} lg={4}>
+            <Grid container spacing={3}>
+              <Grid item xs={12}>
+                <DepartmentBreakdown />
+              </Grid>
+              <Grid item xs={12}>
+                <MonthlyRevenue />
+              </Grid>
+            </Grid>
+          </Grid>
+          <Grid item xs={12} lg={4}>
+            <RecentAppointments />
+          </Grid>
+          <Grid item xs={12} lg={8}>
+            <StaffPerformance />
+          </Grid>
+          <Grid item xs={12}>
+            <AvailableMedications />
+          </Grid>
+        </Grid>
       </Box>
-
-      <Box 
-        ref={pdfRef} 
-        sx={{ 
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden',
-          border: '1px solid #eee',
-          borderRadius: '8px',
-          p: { xs: 1, sm: 2 },
-          backgroundColor: 'background.paper'
-        }}
-      >
-        <Tabs 
-          value={tabValue} 
-          onChange={handleTabChange}
-          indicatorColor="primary"
-          sx={{ mb: 2 }}
-          variant="scrollable"
-          scrollButtons="auto"
-        >
-          <Tab label="Амин үзүүлэлт" />
-          <Tab label="Өвчний түүх" />
-          <Tab label="Эмчилгээний түүх" />
-          <Tab label="Үзлэгийн түүх" />
-          <Box sx={{ display: 'flex', alignItems: 'center', ml: 'auto' }}>
-            <IconButton onClick={handleMenuOpen}>
-              <PictureAsPdfIcon />
-            </IconButton>
-          </Box>
-        </Tabs>
-
-        <Menu 
-          anchorEl={anchorEl} 
-          open={Boolean(anchorEl)} 
-          onClose={handleMenuClose}
-          anchorOrigin={{
-            vertical: 'bottom',
-            horizontal: 'right',
-          }}
-          transformOrigin={{
-            vertical: 'top',
-            horizontal: 'right',
-          }}
-        >
-          <MenuItem onClick={downloadPDF}>PDF татах</MenuItem>
-        </Menu>
-
-        {customer && (
-          <Box sx={{ 
-            mb: 3, 
-            p: 2, 
-            border: '1px solid #eee', 
-            borderRadius: '8px',
-          }}>
-            <Typography variant="h6" gutterBottom>Үндсэн мэдээлэл</Typography>
-            <Divider sx={{ mb: 2 }} />
-            <Stack direction="row" spacing={4} flexWrap="wrap">
-              <Box sx={{ width: { xs: '100%', sm: '45%' }, mb: 2 }}>
-                <Typography variant="body2" color="text.secondary">Нэр</Typography>
-                <Typography>{customer.name}</Typography>
-              </Box>
-              <Box sx={{ width: { xs: '100%', sm: '45%' }, mb: 2 }}>
-                <Typography variant="body2" color="text.secondary">Төрсөн огноо</Typography>
-                <Typography>{customer.birthDate}</Typography>
-              </Box>
-              <Box sx={{ width: { xs: '100%', sm: '45%' }, mb: 2 }}>
-                <Typography variant="body2" color="text.secondary">Нас</Typography>
-                <Typography>{customer.age}</Typography>
-              </Box>
-              <Box sx={{ width: { xs: '100%', sm: '45%' }, mb: 2 }}>
-                <Typography variant="body2" color="text.secondary">Төрөл</Typography>
-                <Typography>{customer.type}</Typography>
-              </Box>
-              <Box sx={{ width: { xs: '100%', sm: '45%' }, mb: 2 }}>
-                <Typography variant="body2" color="text.secondary">Утас</Typography>
-                <Typography>{customer.phone}</Typography>
-              </Box>
-              <Box sx={{ width: { xs: '100%', sm: '100%' }, mb: 2 }}>
-                <Typography variant="body2" color="text.secondary">Хаяг</Typography>
-                <Typography>{customer.address}</Typography>
-              </Box>
-            </Stack>
-          </Box>
-        )}
-
-        <Box sx={{ 
-          flex: 1,
-          overflowY: 'auto',
-          pb: 2
-        }}>
-          {renderTabContent()}
-        </Box>
-
-        <Button
-          variant="contained"
-          sx={{ mt: 2, width: '100%' }}
-          onClick={() => toast.success('Хадгалагдлаа')}
-        >
-          Хадгалах
-        </Button>
-      </Box>
-    </Container>
-  );
+    </PageContainer>
+  )
 }
+
+// app/dashboard/page.js
+// 'use client'
+// import { Grid, Box, Typography, CircularProgress } from '@mui/material';
+// import { useRouter } from 'next/navigation';
+// import { useAuth } from '../context/authContext';
+// import PageContainer from '@/app/(DashboardLayout)/components/container/PageContainer';
+// import PatientOverview from './components/dashboard/PatientOverview';
+// import DepartmentBreakdown from './components/dashboard/DepartmentBreakdown';
+// import MonthlyRevenue from './components/dashboard/MonthlyRevenue';
+// import RecentAppointments from './components/dashboard/recentAppointment';
+// import StaffPerformance from './components/dashboard/StaffPerformance';
+// import AvailableMedications from './components/dashboard/AvailableMed';
+
+// const Dashboard = () => {
+//   const { user, loading } = useAuth();
+//   const router = useRouter();
+
+//   // Хэрэглэгч нэвтрээгүй эсвэл ачааллаж байгаа тохиолдолд
+//   if (loading) {
+//     return (
+//       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+//         <CircularProgress />
+//       </Box>
+//     );
+//   }
+
+//   if (!user) {
+//     // Нэвтрээгүй тохиолдолд нэвтрэх хуудасруу шилжүүлэх
+//     if (typeof window !== 'undefined') {
+//       router.push('/authentication/login');
+//     }
+//     return null;
+//   }
+
+//   // Хэрэглэгчийн эрхийг шалгах (жишээ: зөвхөн эмч эсвэл админ хандах эсэх)
+//   const canAccessDashboard = ['doctor', 'admin', 'patient'].includes(user.role);
+  
+//   if (!canAccessDashboard) {
+//     return (
+//       <PageContainer title="Хандах эрхгүй">
+//         <Box sx={{ pt: 2, pb: 4, textAlign: 'center' }}>
+//           <Typography variant="h4" sx={{ mb: 2 }}>
+//             Хандах эрхгүй
+//           </Typography>
+//           <Typography>
+//             Таны эрхээр энэ хуудсыг харах боломжгүй
+//           </Typography>
+//         </Box>
+//       </PageContainer>
+//     );
+//   }
+
+//   // Хэрэглэгчийн төрлөөс хамаарч өөр dashboard харуулах
+//   const renderDashboard = () => {
+//     switch(user.role) {
+//       case 'admin':
+//         return (
+//           <>
+//             <Grid item xs={12} lg={8}>
+//               <PatientOverview />
+//             </Grid>
+//             <Grid item xs={12} lg={4}>
+//               <Grid container spacing={3}>
+//                 <Grid item xs={12}>
+//                   <DepartmentBreakdown />
+//                 </Grid>
+//                 <Grid item xs={12}>
+//                   <MonthlyRevenue />
+//                 </Grid>
+//               </Grid>
+//             </Grid>
+//             <Grid item xs={12} lg={4}>
+//               <RecentAppointments />
+//             </Grid>
+//             <Grid item xs={12} lg={8}>
+//               <StaffPerformance />
+//             </Grid>
+//             <Grid item xs={12}>
+//               <AvailableMedications />
+//             </Grid>
+//           </>
+//         );
+//       case 'doctor':
+//         return (
+//           <>
+//             <Grid item xs={12} lg={8}>
+//               <PatientOverview showOnlyMyPatients doctorId={user.id} />
+//             </Grid>
+//             <Grid item xs={12} lg={4}>
+//               <Grid container spacing={3}>
+//                 <Grid item xs={12}>
+//                   <MyAppointments doctorId={user.id} />
+//                 </Grid>
+//                 <Grid item xs={12}>
+//                   <MySchedule doctorId={user.id} />
+//                 </Grid>
+//               </Grid>
+//             </Grid>
+//           </>
+//         );
+//       case 'patient':
+//         return (
+//           <>
+//             <Grid item xs={12}>
+//               <MyMedicalRecords patientId={user.id} />
+//             </Grid>
+//             <Grid item xs={12} lg={6}>
+//               <UpcomingAppointments patientId={user.id} />
+//             </Grid>
+//             <Grid item xs={12} lg={6}>
+//               <PrescriptionHistory patientId={user.id} />
+//             </Grid>
+//           </>
+//         );
+//       default:
+//         return null;
+//     }
+//   };
+
+//   return (
+//     <PageContainer title="Эмнэлгийн хяналтын самбар" description="Hospital Dashboard">
+//       <Box sx={{ pt: 2, pb: 4 }}>
+//         <Typography variant="h4" fontWeight="600" sx={{ mb: 4 }}>
+//           {user.role === 'admin' && 'Эмнэлгийн хяналтын самбар'}
+//           {user.role === 'doctor' && 'Эмчийн самбар'}
+//           {user.role === 'patient' && 'Миний эрүүл мэндийн самбар'}
+//         </Typography>
+//         <Grid container spacing={3}>
+//           {renderDashboard()}
+//         </Grid>
+//       </Box>
+//     </PageContainer>
+//   );
+// };
+
+// export default Dashboard;

@@ -49,7 +49,7 @@ const demoUsers = [
     password: 'Password123%',
     role: 'doctor',
     name: 'Эмч хэрэглэгч',
-    redirect: '/admin/dashboard/home'  // Changed to home page
+    redirect: '/dashboard/home'  // Changed to home page
   },
   {
     email: 'admin@ex.com',

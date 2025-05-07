@@ -9,6 +9,12 @@ import {
   listPatientAllergies,
 } from "../../infrastructure/repositories/patientRepository.js";
 
+// Бүх үйлчлүүлэгч авах use case (public API-д зориулсан)
+export const getAllPatients = async () => {
+  const patients = await listAllPatients();
+  return patients;
+};
+
 //buh uwchtun
 export const createPatientUseCases = () => {
   const listPatients = async (filters = {}) => {

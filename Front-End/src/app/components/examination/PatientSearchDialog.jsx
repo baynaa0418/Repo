@@ -80,7 +80,7 @@ const PatientSearchDialog = ({
           {patients.length > 0 ? (
             patients.map((patient) => (
               <ListItem 
-                key={patient._id || patient.id || patient.registerNum}
+              key={patient._id || patient.id || patient.registerNum || idx}
                 onClick={() => onSelectPatient(patient)}
                 sx={{ 
                   borderBottom: '1px solid #eee',

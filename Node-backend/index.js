@@ -11,6 +11,7 @@ import MedicalStaffRouter from "./interfaces/routes/medicalstaff.routes.js";
 import ExaminationRouter from "./interfaces/routes/examination.routes.js";
 import QuestionnaireRouter from "./interfaces/routes/questionnaire.routes.js";
 import QuestionRouter from "./interfaces/routes/question.routes.js";
+import prescriptionRoutes from './routes/prescription.routes.js';
 
 const app = express();
 app.use(express.json());
@@ -36,6 +37,7 @@ app.use("/api/medicalstaff", MedicalStaffRouter);
 app.use("/api/examination", ExaminationRouter);
 app.use("/api/questionnaire", QuestionnaireRouter);
 app.use("/api/question", QuestionRouter);
+app.use('/api/prescriptions', prescriptionRoutes);
 
 console.log("working");
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

@@ -1,9 +1,10 @@
-import {
-  getOwnExaminations,
-  listAllPatients,
-} from "../controller/patient.controller.js";
 import express from "express";
 import { authenticateJWT, authorizeRole } from "../middleware/auth.js";
+import PatientController from "../controller/patientController.js";
+import {
+  listAllPatients,
+  getOwnExaminations,
+} from "../controller/patient.controller.js";
 import {
   getDiagnosisById,
   getMyDiagnoses,
@@ -19,6 +20,9 @@ import {
 
 const router = express.Router();
 
+// Бүх үйлчлүүлэгчдийг авах public route
+router.get("/", PatientController.getAllPatients);
+
 router.get(
   "/view",
   authenticateJWT,
@@ -30,7 +34,7 @@ router.get(
   "/examinations",
   authenticateJWT,
   authorizeRole(["Patient"]),
-  getOwnExaminations
+ getOwnExaminations
 );
 
 //DIAGNOSIS

@@ -25,7 +25,7 @@ router.put("/exam/:id", authorizeRole(["doctor"]), updateExaminationById);
 
 router.delete(
   "/exam/:id",
-  authorizeRole(["doctor"]),
+  authorizeRole(["MedicalStaff"]),
   deleteExaminationById
 );
 

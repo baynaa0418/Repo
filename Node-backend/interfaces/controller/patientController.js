@@ -1,5 +1,6 @@
-import PatientUseCase from "../usecases/Patient.usecase.js";
-
+// ...existing code...
+import * as PatientUseCase from "../../application/use_cases/patientUseCases.js";
+// ...existing code...
 class PatientController {
   async getProfile(req, res) {
     try {
@@ -18,6 +19,16 @@ class PatientController {
       res.json(updatedPatient);
     } catch (error) {
       res.status(400).json({ message: error.message });
+    }
+  }
+
+  // Бүх үйлчлүүлэгчийн жагсаалт авах public API
+  async getAllPatients(req, res) {
+    try {
+      const patients = await PatientUseCase.getAllPatients();
+      res.json(patients);
+    } catch (error) {
+      res.status(500).json({ message: "Үйлчлүүлэгчдийн жагсаалт авахад алдаа гарлаа" });
     }
   }
 }

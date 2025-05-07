@@ -28,21 +28,21 @@ import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import CalendarTodayOutlinedIcon from '@mui/icons-material/CalendarTodayOutlined';
 
+// Mock medical history data - in a real app, this would come from an API
 const generateMockHistoryData = (patientId) => {
-  // patientId байхгүй үед алдаа гарахаас сэргийлнэ
   if (!patientId || typeof patientId !== "string" || patientId.length === 0) {
     return [];
   }
   // Generate consistent but random-looking data based on patient ID
   const historyLength = patientId.charCodeAt(0) % 3 + 2; // 2-4 entries
-
+  
   const history = [];
   const now = new Date();
-
+  
   for (let i = 0; i < historyLength; i++) {
     const date = new Date(now);
     date.setDate(date.getDate() - (i * 14)); // Every 2 weeks in the past
-
+    
     history.push({
       id: `${patientId}-${i}`,
       date: date.toISOString().split('T')[0],
@@ -80,7 +80,7 @@ const generateMockHistoryData = (patientId) => {
       ][i % 3]
     });
   }
-
+  
   return history;
 };
 
